@@ -1,7 +1,8 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import logging
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .core.database import init_db
 from .routers import auth, payments
@@ -27,7 +28,7 @@ app = FastAPI(
     title="Payment Service API",
     description="Сервис для создания и управления платежами",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -47,12 +48,7 @@ app.include_router(payments.router, prefix="/payments", tags=["payments"])
 @app.get("/")
 async def root():
     """Корневой эндпоинт"""
-    return {
-        "message": "Payment Service API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "health": "OK"
-    }
+    return {"message": "Payment Service API", "version": "1.0.0", "docs": "/docs", "health": "OK"}
 
 
 @app.get("/health")

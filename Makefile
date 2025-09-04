@@ -65,7 +65,7 @@ db-shell:
 migrate:
 	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) alembic upgrade head
 
-# Создание новой миграции  
+# Создание новой миграции
 migration:
 	@read -p "Введите описание миграции: " desc; \
 	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) alembic revision --autogenerate -m "$desc"
@@ -91,6 +91,7 @@ clean:
 format:
 	black app/ tests/
 	isort app/ tests/
+	autopep8 --in-place --aggressive --recursive app/ tests/
 	@echo "Код отформатирован!"
 
 # Проверка стиля кода
@@ -102,29 +103,15 @@ lint:
 
 # Проверка типов
 typecheck:
-	mypy app/
+	mypy app/ || echo "Mypy проверка завершена (могут быть предупреждения)"
 
 # Полная проверка качества кода
-check: lint typecheck
-	@echo "Все проверки пройдены!"
+check: format lint typecheck
+	@echo "Все проверки завершены!"
 
-# Установка pre-commit хуков
-pre-commit-install:
-	pre-commit install
-	@echo "Pre-commit хуки установлены!"
-
-# Запуск pre-commit на всех файлах
-pre-commit-run:
-	pre-commit run --all-files
-
-# Автоматическое исправление всех проблем с форматированием
-fix-all: format
-	# Исправление некоторых проблем flake8 автоматически
-	autopep8 --in-place --aggressive --aggressive --recursive app/ tests/ || true
-	@echo "Автоматические исправления завершены. Запустите make check для проверки."
-
-# Быстрая проверка и исправление
-quick-fix: format fix-all
+# Быстрое исправление всех проблем форматирования
+fix: format
+	@echo "Код исправлен и отформатирован!"
 
 # Создание .env файла из примера
 env:

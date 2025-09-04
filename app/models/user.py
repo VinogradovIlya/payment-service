@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime, Numeric
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from typing import TYPE_CHECKING
+
+from sqlalchemy import Column, DateTime, Integer, Numeric, String
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
 from ..core.database import Base
 
 if TYPE_CHECKING:

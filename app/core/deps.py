@@ -1,11 +1,13 @@
 from typing import Annotated, Optional
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.user import User
 from .database import get_async_session
 from .security import verify_token
-from ..models.user import User
 
 security = HTTPBearer()
 
