@@ -1,41 +1,3 @@
-# services:  # Определение сервисов (контейнеров)
-
-#   db:  # Имя первого сервиса - база данных PostgreSQL
-#     image: postgres:15-alpine  # Образ PostgreSQL версии 15 на Alpine Linux (легковесный)
-#     container_name: payment_db  # Имя контейнера (можно обращаться по этому имени)
-#     environment:  # Переменные окружения для настройки PostgreSQL
-#       POSTGRES_DB: ${POSTGRES_DB:-payment_db}      # Имя БД (из .env или по умолчанию payment_db)
-#       POSTGRES_USER: ${POSTGRES_USER:-user}        # Пользователь БД (из .env или по умолчанию user)
-#       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}  # Пароль (из .env или по умолчанию password)
-#     ports:  # Проброс портов host:container
-#       - "5432:5432"  # PostgreSQL будет доступен на localhost:5432
-#     volumes:  # Монтирование томов для сохранения данных
-#       - postgres_data:/var/lib/postgresql/data  # Данные БД сохраняются в именованном томе
-#     healthcheck:  # Проверка здоровья контейнера
-#       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-payment_db}"]  # Команда проверки
-#       interval: 30s  # Интервал между проверками
-#       timeout: 10s   # Таймаут на выполнение команды
-#       retries: 3     # Количество попыток
-
-#   web:  # Второй сервис - наше приложение
-#     build: .  # Собираем образ из Dockerfile в текущей директории
-#     container_name: payment_service  # Имя контейнера приложения
-#     ports:
-#       - "8000:8000"  # FastAPI будет доступен на localhost:8000
-#     depends_on:  # Зависимости - web запустится только после db
-#       db:
-#         condition: service_healthy  # Дождемся успешной healthcheck БД
-#     environment:  # Переменные окружения для приложения
-#       # URL подключения к БД (используем имя сервиса 'db' как хост)
-#       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-payment_db}
-#       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}  # Секретный ключ для JWT
-#     volumes:  # Монтируем код для live reload в разработке
-#       - ./app:/app  # Локальная папка app монтируется в контейнер
-#     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]  # Команда запуска с автоперезагрузкой
-
-# volumes:  # Определение именованных томов
-#   postgres_data:  # Том для данных PostgreSQL, сохраняется между перезапусками
-
 services:
   db:
     image: postgres:15-alpine
@@ -66,7 +28,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-payment_db}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
     volumes:
-      - .:/app  # Монтируем весь проект
+      - .:/app
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 volumes:

@@ -12,12 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class AuthService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def create_user(self, user_data: UserCreate) -> User:
         """Создание нового пользователя"""
-        # Проверка на существование пользователя
         existing_user = await self.get_user_by_username(user_data.username)
         if existing_user:
             raise ValueError("Пользователь с таким username уже существует")
@@ -26,14 +25,13 @@ class AuthService:
         if existing_email:
             raise ValueError("Пользователь с таким email уже существует")
 
-        # Создание пользователя
         hashed_password = get_password_hash(user_data.password)
         db_user = User(
             email=user_data.email,
             username=user_data.username,
             full_name=user_data.full_name,
             hashed_password=hashed_password,
-            balance=1000.00,  # Стартовый баланс для тестирования
+            balance=0.00,
         )
 
         self.db.add(db_user)
@@ -49,7 +47,7 @@ class AuthService:
         if not user:
             return None
 
-        if not verify_password(password, user.hashed_password):  # type: ignore
+        if not verify_password(password, str(user.hashed_password)):
             return None
 
         logger.info(f"Успешная аутентификация пользователя: {username}")

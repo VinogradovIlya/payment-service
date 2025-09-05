@@ -1,119 +1,95 @@
-.PHONY: help build up down restart logs clean test lint format migrate
+.PHONY: help build up down restart logs clean test lint format migrate rebuild typecheck check fix env
 
-# Переменные
 COMPOSE_FILE = docker-compose.yml
 SERVICE_WEB = web
 SERVICE_DB = db
 
-# Помощь
 help:
 	@echo "Доступные команды:"
-	@echo "  build     - Собрать Docker образы"
-	@echo "  up        - Запустить все сервисы"
+	@echo "  rebuild   - Универсальная команда: очистить все + собрать + запустить + миграции"
+	@echo "  up        - Запустить все сервисы (если уже собраны)"
 	@echo "  down      - Остановить все сервисы"
-	@echo "  restart   - Перезапустить сервисы"
 	@echo "  logs      - Показать логи"
 	@echo "  logs-web  - Показать логи веб-сервиса"
 	@echo "  logs-db   - Показать логи базы данных"
-	@echo "  clean     - Очистить все контейнеры и образы"
 	@echo "  shell     - Подключиться к контейнеру приложения"
 	@echo "  db-shell  - Подключиться к PostgreSQL"
-	@echo "  migrate   - Запустить миграции"
 	@echo "  test      - Запустить тесты"
-	@echo "  dev       - Запуск в режиме разработки с автоперезагрузкой"
+	@echo "  format    - Отформатировать код"
+	@echo "  lint      - Проверить стиль кода"
+	@echo "  typecheck - Проверить типы (mypy)"
+	@echo "  check     - Полная проверка качества кода"
 
-# Сборка образов
-build:
-	docker-compose -f $(COMPOSE_FILE) build
+rebuild:
+	@echo "🧹 Очищаем все..."
+	docker-compose -f $(COMPOSE_FILE) down -v --remove-orphans
+	docker system prune -f
+	docker volume prune -f
+	@echo "🔨 Собираем образы без кэша..."
+	docker-compose -f $(COMPOSE_FILE) build --no-cache
+	@echo "🚀 Запускаем сервисы..."
+	docker-compose -f $(COMPOSE_FILE) up -d
+	@echo "⏳ Ждем готовности базы данных..."
+	sleep 10
+	@echo "📊 Создаем миграции..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) rm -f alembic/versions/*.py || true
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) alembic revision --autogenerate -m "Initial migration" || true
+	@echo "🗃️ Применяем миграции..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) alembic upgrade head || true
+	@echo ""
+	@echo "✅ Готово! Приложение доступно:"
+	@echo "   📖 API документация: http://localhost:8000/docs"
+	@echo "   🏠 Главная страница: http://localhost:8000"
+	@echo "   📊 Статус: http://localhost:8000/health"
+	@echo ""
 
-# Запуск всех сервисов
 up:
 	docker-compose -f $(COMPOSE_FILE) up -d
 
-# Первый запуск (сборка + запуск)
-dev:
-	docker-compose -f $(COMPOSE_FILE) up --build
-
-# Остановка сервисов
 down:
 	docker-compose -f $(COMPOSE_FILE) down
 
-# Перезапуск
 restart: down up
 
-# Логи всех сервисов
 logs:
 	docker-compose -f $(COMPOSE_FILE) logs -f
 
-# Логи веб-сервиса
 logs-web:
 	docker-compose -f $(COMPOSE_FILE) logs -f $(SERVICE_WEB)
 
-# Логи базы данных
 logs-db:
 	docker-compose -f $(COMPOSE_FILE) logs -f $(SERVICE_DB)
 
-# Подключение к контейнеру приложения
 shell:
 	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) /bin/bash
 
-# Подключение к PostgreSQL
 db-shell:
 	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_DB) psql -U user -d payment_db
 
-# Миграции
-migrate:
-	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) alembic upgrade head
-
-# Создание новой миграции
-migration:
-	@read -p "Введите описание миграции: " desc; \
-	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) alembic revision --autogenerate -m "$desc"
-
-# Создание первоначальных миграций (запускается один раз)
-init-migrations:
-	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) alembic revision --autogenerate -m "Initial migration"
-
-# Тесты
 test:
 	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest -v
 
-# Проверка статуса
 status:
 	docker-compose -f $(COMPOSE_FILE) ps
 
-# Полная очистка
-clean:
-	docker-compose -f $(COMPOSE_FILE) down -v --rmi all --remove-orphans
-	docker system prune -f
-
-# Форматирование кода
 format:
-	black app/ tests/
-	isort app/ tests/
-	autopep8 --in-place --aggressive --recursive app/ tests/
+	black app/ tests/ alembic/
+	isort app/ tests/ alembic/
+	autopep8 --in-place --aggressive --recursive app/ tests/ alembic/
 	@echo "Код отформатирован!"
 
-# Проверка стиля кода
 lint:
-	flake8 app/ tests/
-	black --check app/ tests/
-	isort --check-only app/ tests/
+	flake8 app/ tests/ alembic/
+	black --check app/ tests/ alembic/
+	isort --check-only app/ tests/ alembic/
 	@echo "Стиль кода проверен!"
 
-# Проверка типов
 typecheck:
 	mypy app/ || echo "Mypy проверка завершена (могут быть предупреждения)"
 
-# Полная проверка качества кода
 check: format lint typecheck
 	@echo "Все проверки завершены!"
 
-# Быстрое исправление всех проблем форматирования
-fix: format
-	@echo "Код исправлен и отформатирован!"
-
-# Создание .env файла из примера
 env:
 	cp .env.example .env
 	@echo ".env файл создан. Отредактируйте его при необходимости."

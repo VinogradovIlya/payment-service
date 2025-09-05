@@ -17,39 +17,45 @@
 ## Быстрый старт
 
 1. **Клонируйте репозиторий:**
+
 ```bash
 git clone git@github.com:VinogradovIlya/payment-service.git
 cd payment-service
 ```
 
 2. **Создайте .env файл:**
+
 ```bash
 make env
 ```
 
 3. **Запустите проект:**
+
 ```bash
 make dev
 ```
 
 4. **Создайте и примените миграции:**
+
 ```bash
 make init-migrations
 make migrate
 ```
 
 5. **Откройте API документацию:**
-   - Swagger UI: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
+   - Swagger UI: <http://localhost:8000/docs>
+   - ReDoc: <http://localhost:8000/redoc>
 
 ## API Endpoints
 
 ### Аутентификация
+
 - `POST /auth/register` - Регистрация пользователя
 - `POST /auth/login` - Вход пользователя
 - `GET /auth/me` - Информация о текущем пользователе
 
 ### Платежи
+
 - `POST /payments/` - Создание платежа
 - `GET /payments/` - Список платежей пользователя
 - `GET /payments/{id}` - Информация о платеже
@@ -57,12 +63,14 @@ make migrate
 - `PUT /payments/{id}/cancel` - Отмена платежа
 
 ### Системные
+
 - `GET /` - Корневая страница
 - `GET /health` - Проверка здоровья сервиса
 
 ## Команды Make
 
-### Основные команды:
+### Основные команды
+
 - `make dev` - Запуск в режиме разработки
 - `make up` - Запуск сервисов
 - `make down` - Остановка сервисов
@@ -70,13 +78,15 @@ make migrate
 - `make logs` - Просмотр логов
 - `make shell` - Подключение к контейнеру
 
-### База данных:
+### База данных
+
 - `make init-migrations` - Создание первоначальных миграций
 - `make migration` - Создание новой миграции
 - `make migrate` - Применение миграций
 - `make db-shell` - Подключение к PostgreSQL
 
-### Качество кода:
+### Качество кода
+
 - `make format` - Форматирование кода
 - `make lint` - Проверка стиля
 - `make typecheck` - Проверка типов
@@ -85,7 +95,8 @@ make migrate
 
 ## Тестирование API
 
-### 1. Регистрация пользователя:
+### 1. Регистрация пользователя
+
 ```bash
 curl -X POST "http://localhost:8000/auth/register" \
   -H "Content-Type: application/json" \
@@ -97,7 +108,8 @@ curl -X POST "http://localhost:8000/auth/register" \
   }'
 ```
 
-### 2. Вход в систему:
+### 2. Вход в систему
+
 ```bash
 curl -X POST "http://localhost:8000/auth/login" \
   -H "Content-Type: application/json" \
@@ -107,7 +119,8 @@ curl -X POST "http://localhost:8000/auth/login" \
   }'
 ```
 
-### 3. Создание платежа (с токеном):
+### 3. Создание платежа (с токеном)
+
 ```bash
 curl -X POST "http://localhost:8000/payments/" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
@@ -171,17 +184,20 @@ PORT=8000
 
 ## Разработка
 
-### Установка pre-commit хуков:
+### Установка pre-commit хуков
+
 ```bash
 make pre-commit-install
 ```
 
-### Запуск тестов:
+### Запуск тестов
+
 ```bash
 make test
 ```
 
-### Проверка кода:
+### Проверка кода
+
 ```bash
 make check
 ```

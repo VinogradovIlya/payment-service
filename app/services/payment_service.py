@@ -1,12 +1,10 @@
 import logging
 from datetime import datetime
-from decimal import Decimal
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from ..models.payment import Payment, PaymentStatus
 from ..models.user import User
@@ -16,17 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 class PaymentService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def create_payment(self, payment_data: PaymentCreate, sender_id: int) -> Payment:
         """Создание нового платежа"""
-        # Проверка баланса отправителя
         sender = await self._get_user_by_id(sender_id)
-        if sender.balance < payment_data.amount:  # type: ignore
+        if sender.balance < payment_data.amount:
             raise ValueError("Недостаточно средств на балансе")
 
-        # Если это внутренний перевод, проверяем получателя
         if payment_data.receiver_id:
             receiver = await self._get_user_by_id(payment_data.receiver_id)
             if not receiver:
@@ -35,7 +31,6 @@ class PaymentService:
             if sender_id == payment_data.receiver_id:
                 raise ValueError("Нельзя переводить деньги самому себе")
 
-        # Создание платежа
         payment = Payment(
             sender_id=sender_id,
             receiver_id=payment_data.receiver_id,
@@ -59,27 +54,22 @@ class PaymentService:
         """Подтверждение платежа"""
         payment = await self._get_payment_by_id(payment_id)
 
-        # Проверки
-        if payment.sender_id != user_id:
+        if int(payment.sender_id) != user_id:
             raise ValueError("Вы можете подтверждать только свои платежи")
 
         if payment.status != PaymentStatus.CREATED:
             raise ValueError(f"Платеж уже обработан, статус: {payment.status.value}")
 
-        # Проверка баланса
-        sender = await self._get_user_by_id(payment.sender_id)
-        if sender.balance < payment.amount:  # type: ignore
+        sender = await self._get_user_by_id(int(payment.sender_id))
+        if sender.balance < payment.amount:
             raise ValueError("Недостаточно средств на балансе")
 
-        # Списание с отправителя
-        sender.balance -= payment.amount  # type: ignore
+        sender.balance = sender.balance - payment.amount
 
-        # Зачисление получателю (если внутренний перевод)
         if payment.receiver_id:
-            receiver = await self._get_user_by_id(payment.receiver_id)
-            receiver.balance += payment.amount  # type: ignore
+            receiver = await self._get_user_by_id(int(payment.receiver_id))
+            receiver.balance = receiver.balance + payment.amount
 
-        # Обновление статуса платежа
         payment.status = PaymentStatus.PAID
         payment.paid_at = datetime.now()
 
@@ -93,15 +83,13 @@ class PaymentService:
         """Отмена платежа"""
         payment = await self._get_payment_by_id(payment_id)
 
-        # Проверки
-        if payment.sender_id != user_id:
+        if int(payment.sender_id) != user_id:
             raise ValueError("Вы можете отменять только свои платежи")
 
         if payment.status != PaymentStatus.CREATED:
             raise ValueError(f"Платеж уже обработан, статус: {payment.status.value}")
 
-        # Обновление статуса
-        payment.status = PaymentStatus.CANCELLED
+        setattr(payment, "status", PaymentStatus.CANCELLED)
 
         await self.db.commit()
         await self.db.refresh(payment)

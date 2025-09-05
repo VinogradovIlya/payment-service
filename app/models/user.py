@@ -22,7 +22,6 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Связи
     sent_payments = relationship(
         "Payment", foreign_keys="Payment.sender_id", back_populates="sender"
     )

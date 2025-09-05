@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.database import get_async_session
 from ..core.deps import get_current_user
 from ..models.user import User
-from ..schemas.payment import PaymentCreate, PaymentResponse, PaymentUpdate
+from ..schemas.payment import PaymentCreate, PaymentResponse
 from ..services.payment_service import PaymentService
 
 router = APIRouter()
@@ -18,7 +18,7 @@ async def create_payment(
     payment_data: PaymentCreate,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_async_session)],
-):
+) -> PaymentResponse:
     """Создание нового платежа"""
     payment_service = PaymentService(db)
 
@@ -35,7 +35,7 @@ async def get_payments(
     db: Annotated[AsyncSession, Depends(get_async_session)],
     limit: int = Query(default=50, le=100),
     offset: int = Query(default=0, ge=0),
-):
+) -> List[PaymentResponse]:
     """Получение списка платежей пользователя"""
     payment_service = PaymentService(db)
 
@@ -49,7 +49,7 @@ async def confirm_payment(
     payment_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_async_session)],
-):
+) -> PaymentResponse:
     """Подтверждение платежа"""
     payment_service = PaymentService(db)
 
@@ -65,7 +65,7 @@ async def cancel_payment(
     payment_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_async_session)],
-):
+) -> PaymentResponse:
     """Отмена платежа"""
     payment_service = PaymentService(db)
 
@@ -81,15 +81,16 @@ async def get_payment(
     payment_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_async_session)],
-):
+) -> PaymentResponse:
     """Получение информации о конкретном платеже"""
     payment_service = PaymentService(db)
 
     try:
         payment = await payment_service._get_payment_by_id(payment_id)
 
-        # Проверяем, что пользователь имеет доступ к этому платежу
-        if payment.sender_id != current_user.id and payment.receiver_id != current_user.id:
+        if payment.sender_id != int(current_user.id) and payment.receiver_id != int(
+            current_user.id
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="У вас нет доступа к этому платежу"
             )
