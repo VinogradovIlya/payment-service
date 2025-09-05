@@ -93,6 +93,20 @@ make migrate
 - `make check` - Полная проверка
 - `make test` - Запуск тестов
 
+## Ветки
+
+- **main** - стабильная версия для production
+- **develop** - ветка разработки для новых фич
+- Для новых возможностей создавайте feature/* ветки
+
+Ветки:
+├── main (stable, production-ready) ✅
+├── develop (development, latest features) ✅
+└── [feature branches при необходимости]
+
+Tags:
+└── v1.0.0
+
 ## Тестирование API
 
 ### 1. Регистрация пользователя
