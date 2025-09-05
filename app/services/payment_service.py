@@ -67,11 +67,11 @@ class PaymentService:
         sender.balance = sender.balance - payment.amount
 
         if payment.receiver_id:
-            receiver = await self._get_user_by_id(int(payment.receiver_id))
+            receiver = await self._get_user_by_id(payment.receiver_id)
             receiver.balance = receiver.balance + payment.amount
 
-        payment.status = PaymentStatus.PAID
-        payment.paid_at = datetime.now()
+        setattr(payment, "status", PaymentStatus.PAID)
+        setattr(payment, "paid_at", datetime.now())
 
         await self.db.commit()
         await self.db.refresh(payment)
