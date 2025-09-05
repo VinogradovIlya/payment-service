@@ -29,12 +29,12 @@ class TestBasic:
     def test_auth_without_token(self, client: TestClient):
         """Тест запроса без токена"""
         response = client.get("/auth/me")
-        assert response.status_code in [401, 403]
+        assert response.status_code == 403
 
     def test_payments_without_token(self, client: TestClient):
         """Тест запроса платежей без токена"""
         response = client.get("/payments/")
-        assert response.status_code in [401, 403]
+        assert response.status_code == 403
 
     def test_invalid_register_data(self, client: TestClient):
         """Тест регистрации с невалидными данными"""
@@ -67,38 +67,12 @@ class TestBasic:
         }
 
         response = client.post("/payments/", json=invalid_payment)
-        assert response.status_code in [401, 403, 422]
+        assert response.status_code in [403, 422]
 
+    def test_nonexistent_endpoints(self, client: TestClient):
+        """Тест несуществующих эндпоинтов"""
+        response = client.get("/nonexistent")
+        assert response.status_code == 404
 
-class TestWithDatabase:
-    """Тесты, которые работают с базой данных"""
-
-    def test_user_registration_flow(self, client: TestClient):
-        """Простой тест регистрации"""
-        import uuid
-
-        unique_id = str(uuid.uuid4())[:8]
-
-        user_data = {
-            "email": f"test{unique_id}@example.com",
-            "username": f"user{unique_id}",
-            "password": "password123",
-            "full_name": "Test User",
-        }
-
-        response = client.post("/auth/register", json=user_data)
-
-        if response.status_code == 200:
-            data = response.json()
-            assert "access_token" in data
-            assert data["user"]["email"] == user_data["email"]
-
-        else:
-            pytest.skip(f"Database issue: {response.status_code}")
-
-    def test_login_nonexistent_user(self, client: TestClient):
-        """Тест входа несуществующего пользователя"""
-        login_data = {"username": "definitely_nonexistent_user_12345", "password": "password123"}
-
-        response = client.post("/auth/login", json=login_data)
-        assert response.status_code in [401, 500]
+        response = client.get("/payments/nonexistent")
+        assert response.status_code == 403

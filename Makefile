@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs clean test lint format migrate rebuild typecheck check fix env
+.PHONY: help build up down restart logs clean test lint format migrate rebuild typecheck check fix env test-simple test-auth test-payments
 
 COMPOSE_FILE = docker-compose.yml
 SERVICE_WEB = web
@@ -14,7 +14,10 @@ help:
 	@echo "  logs-db   - Показать логи базы данных"
 	@echo "  shell     - Подключиться к контейнеру приложения"
 	@echo "  db-shell  - Подключиться к PostgreSQL"
-	@echo "  test      - Запустить тесты"
+	@echo "  test      - Запустить все тесты"
+	@echo "  test-simple    - Запустить только простые тесты"
+	@echo "  test-auth      - Запустить тесты аутентификации"
+	@echo "  test-payments  - Запустить тесты платежей"
 	@echo "  format    - Отформатировать код"
 	@echo "  lint      - Проверить стиль кода"
 	@echo "  typecheck - Проверить типы (mypy)"
@@ -67,7 +70,24 @@ db-shell:
 	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_DB) psql -U user -d payment_db
 
 test:
-	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest -v
+	@echo "🧪 Запускаем все тесты..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest -v --tb=short
+
+test-simple:
+	@echo "🧪 Запускаем простые тесты..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest tests/test_simple.py tests/test_main.py -v
+
+test-auth:
+	@echo "🧪 Запускаем тесты аутентификации..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest tests/test_auth.py -v
+
+test-payments:
+	@echo "🧪 Запускаем тесты платежей..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest tests/test_payments.py -v
+
+test-working:
+	@echo "🧪 Запускаем рабочие тесты..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest tests/test_working.py -v
 
 status:
 	docker-compose -f $(COMPOSE_FILE) ps
@@ -93,3 +113,12 @@ check: format lint typecheck
 env:
 	cp .env.example .env
 	@echo ".env файл создан. Отредактируйте его при необходимости."
+
+debug-test:
+	@echo "🐛 Отладка тестов..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) pytest -v -s --tb=long
+
+clean-test:
+	@echo "🧹 Очистка тестовых данных..."
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) find . -name "*.pyc" -delete
+	docker-compose -f $(COMPOSE_FILE) exec $(SERVICE_WEB) find . -name "__pycache__" -type d -exec rm -rf {} + || true
